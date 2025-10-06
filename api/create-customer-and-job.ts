@@ -89,8 +89,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const jobCreated = await JobNimbus.createJob({
       contactId: contactId,
       name: j.name ?? 'New Job',
-      type: j.type ?? cfg.defaults.jobType,
-      status: j.status ?? cfg.defaults.jobStatus,
+      // Don't set type or status - let JobNimbus use defaults
       address: j.address
     }, jnKey);
 
