@@ -21,15 +21,17 @@ export type ContactCreate = {
 };
 
 export type JobCreate = {
-  contactId: string;      // AKA primary contact/customer id
   name?: string;
   type?: string;
   status?: string;
   address?: {
     street?: string; city?: string; state?: string; postalCode?: string;
   };
-  sales_rep?: string;      // Salesperson email
-  sales_rep_name?: string; // Salesperson name
+  primary?: {
+    id: string;           // The contact/customer JNID this job is linked to
+  };
+  sales_rep?: string;      // Salesperson email (read-only, set via actor)
+  sales_rep_name?: string; // Salesperson name (read-only, set via actor)
 };
 
 export const JobNimbus = (apiKey?: string, actorEmail?: string) => ({

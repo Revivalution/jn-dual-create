@@ -147,10 +147,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let jobCreated;
     try {
       jobCreated = await JN.createJob({
-        contactId: contactId,
         name: jobName,
         // Don't set type or status - let JobNimbus use defaults
-        address: j.address
+        address: j.address,
+        // Link job to contact using the 'primary' field (per JobNimbus docs)
+        primary: {
+          id: contactId
+        }
         // NOTE: We use the 'actor' query parameter to set the creator/owner
         // Don't manually set sales_rep or sales_rep_name - JobNimbus handles this
       });
@@ -165,9 +168,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         
         // Retry once
         jobCreated = await JN.createJob({
-          contactId: contactId,
           name: jobName,
-          address: j.address
+          address: j.address,
+          primary: {
+            id: contactId
+          }
         });
       } else {
         throw jobError; // Re-throw if it's a different error
