@@ -7,6 +7,7 @@ export type ContactCreate = {
   firstName?: string;
   lastName?: string;
   displayName?: string; // often unique in JN
+  display_name?: string; // snake_case version
   name?: string;        // some tenants expose 'name' instead
   type?: string;
   status?: string;
@@ -15,6 +16,8 @@ export type ContactCreate = {
   address?: {
     street?: string; city?: string; state?: string; postalCode?: string;
   };
+  sales_rep?: string;      // Salesperson email
+  sales_rep_name?: string; // Salesperson name
 };
 
 export type JobCreate = {
@@ -25,6 +28,8 @@ export type JobCreate = {
   address?: {
     street?: string; city?: string; state?: string; postalCode?: string;
   };
+  sales_rep?: string;      // Salesperson email
+  sales_rep_name?: string; // Salesperson name
 };
 
 export const JobNimbus = (apiKey?: string) => ({

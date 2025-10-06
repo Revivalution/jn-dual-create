@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { JobNimbus } from '../src/libs/jobnimbus.js';
 import { normalizeE164 } from '../src/libs/phone.js';
 import { extractRecordNumber } from '../src/libs/numbers.js';
+import { log } from '../src/libs/logger.js';
 
 const cfg = {
   defaults: {
@@ -23,6 +24,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Multi-tenant auth
     const appToken = req.headers['x-app-token'] as string;
     const jnKey = req.headers['x-jn-api-key'] as string;
+    const userEmail = req.headers['x-user-email'] as string;
+    const userName = req.headers['x-user-name'] as string;
     
     if (!appToken || appToken !== process.env.APP_TOKEN) {
       return res.status(401).json({ error: 'unauthorized' });
@@ -36,7 +39,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const c: any = body.contact || {};
     const j: any = body.job || {};
 
-    log.info({ contact: c, job: j }, 'Received request');
+    console.log('👤 Creating for user:', userName, '(', userEmail, ')');
+    console.log('📦 Request:', { contact: c, job: j });
 
     // 1) Normalize and search (phone > email > name)
     const phone = normalizeE164(c.phone);
@@ -78,7 +82,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Don't set type or status - let JobNimbus use defaults
         phone: phone,
         email: email,
-        address: c.address
+        address: c.address,
+        // Assign to current user
+        sales_rep: userEmail,
+        sales_rep_name: userName
       });
 
       log.info({ created }, 'Contact created response');
@@ -101,7 +108,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       contactId: contactId,
       name: j.name ?? 'New Job',
       // Don't set type or status - let JobNimbus use defaults
-      address: j.address
+      address: j.address,
+      // Assign to current user
+      sales_rep: userEmail,
+      sales_rep_name: userName
     });
 
     log.info({ jobCreated }, 'Job created response');
