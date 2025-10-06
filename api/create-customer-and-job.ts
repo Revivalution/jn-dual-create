@@ -48,7 +48,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const email = typeof c.email === 'string' ? c.email : undefined;
     let found: any | undefined;
 
-    const JN = JobNimbus(jnKey); // Initialize JobNimbus client with the key
+    const JN = JobNimbus(jnKey, userEmail); // Initialize JobNimbus client with the key and actor email
 
     if (phone) {
       const r = await JN.searchContacts({ phone });
@@ -89,13 +89,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         address: c.address
       };
       
-      // Only add sales_rep if we have the user info
-      if (userEmail) {
-        contactData.sales_rep = userEmail;
-      }
-      if (userName) {
-        contactData.sales_rep_name = userName;
-      }
+      // NOTE: We use the 'actor' query parameter to set the creator/owner
+      // Don't manually set sales_rep or sales_rep_name - JobNimbus handles this
       
       console.log('📝 Contact data:', JSON.stringify(contactData, null, 2));
       
@@ -155,10 +150,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         contactId: contactId,
         name: jobName,
         // Don't set type or status - let JobNimbus use defaults
-        address: j.address,
-        // Assign to current user
-        sales_rep: userEmail,
-        sales_rep_name: userName
+        address: j.address
+        // NOTE: We use the 'actor' query parameter to set the creator/owner
+        // Don't manually set sales_rep or sales_rep_name - JobNimbus handles this
       });
     } catch (jobError: any) {
       console.error('❌ Job creation failed:', jobError.message);
@@ -173,9 +167,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         jobCreated = await JN.createJob({
           contactId: contactId,
           name: jobName,
-          address: j.address,
-          sales_rep: userEmail,
-          sales_rep_name: userName
+          address: j.address
         });
       } else {
         throw jobError; // Re-throw if it's a different error

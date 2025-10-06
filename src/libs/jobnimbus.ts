@@ -32,22 +32,27 @@ export type JobCreate = {
   sales_rep_name?: string; // Salesperson name
 };
 
-export const JobNimbus = (apiKey?: string) => ({
+export const JobNimbus = (apiKey?: string, actorEmail?: string) => ({
   async searchContacts(q: { phone?: string; email?: string; name?: string }) {
     // Replace params to match your tenant's search semantics.
-    return (await jnClient(apiKey).get('/contacts', { params: q })).data;
+    const params = actorEmail ? { ...q, actor: actorEmail } : q;
+    return (await jnClient(apiKey).get('/contacts', { params })).data;
   },
   async getContact(id: string) {
-    return (await jnClient(apiKey).get(`/contacts/${id}`)).data;
+    const params = actorEmail ? { actor: actorEmail } : {};
+    return (await jnClient(apiKey).get(`/contacts/${id}`, { params })).data;
   },
   async createContact(body: ContactCreate) {
-    return (await jnClient(apiKey).post('/contacts', body)).data;
+    const params = actorEmail ? { actor: actorEmail } : {};
+    return (await jnClient(apiKey).post('/contacts', body, { params })).data;
   },
   async getJob(id: string) {
-    return (await jnClient(apiKey).get(`/jobs/${id}`)).data;
+    const params = actorEmail ? { actor: actorEmail } : {};
+    return (await jnClient(apiKey).get(`/jobs/${id}`, { params })).data;
   },
   async createJob(body: JobCreate) {
-    return (await jnClient(apiKey).post('/jobs', body)).data;
+    const params = actorEmail ? { actor: actorEmail } : {};
+    return (await jnClient(apiKey).post('/jobs', body, { params })).data;
   }
 });
 
