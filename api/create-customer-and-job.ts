@@ -104,9 +104,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // 3) Create job tied to contact
+    // Auto-generate unique job name if not provided
+    const jobName = j.name && j.name.trim() 
+      ? j.name.trim() 
+      : `Job for ${c.firstName || ''} ${c.lastName || ''} - ${new Date().toISOString().split('T')[0]}`.trim();
+    
+    console.log('📝 Creating job with name:', jobName);
+    
     const jobCreated = await JN.createJob({
       contactId: contactId,
-      name: j.name ?? 'New Job',
+      name: jobName,
       // Don't set type or status - let JobNimbus use defaults
       address: j.address,
       // Assign to current user
