@@ -41,6 +41,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log('👤 Creating for user:', userName, '(', userEmail, ')');
     console.log('📦 Request:', { contact: c, job: j });
+    log.info({ contact: c, job: j, userEmail, userName }, 'Starting customer/job creation');
 
     // 1) Normalize and search (phone > email > name)
     const phone = normalizeE164(c.phone);
@@ -69,9 +70,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let contactId: string;
     let contactNumber: string | undefined;
     if (found?.id) {
+      console.log('✅ Found existing contact:', found.id);
+      log.info({ found }, 'Using existing contact');
       contactId = String(found.id);
       contactNumber = extractRecordNumber(found);
     } else {
+      console.log('📝 Creating new contact...');
       // displayName is required by JobNimbus
       const displayName = c.displayName ?? [c.firstName, c.lastName].filter(Boolean).join(' ').trim();
 
@@ -88,13 +92,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         sales_rep_name: userName
       });
 
+      console.log('✅ Contact created successfully');
       log.info({ created }, 'Contact created response');
       
       // Extract ID - try multiple field names
       contactId = String(created.jnid ?? created.id ?? created.contactId ?? created.ID ?? created._id);
       contactNumber = extractRecordNumber(created);
       
+      console.log('🔑 Contact ID:', contactId, 'Number:', contactNumber);
       log.info({ contactId, contactNumber }, 'Extracted contact identifiers');
+      
+      if (!contactId || contactId === 'undefined') {
+        console.error('❌ Failed to extract contact ID from response');
+        log.error({ created }, 'Contact ID extraction failed');
+        throw new Error('Failed to extract contact ID from JobNimbus response');
+      }
       
       if (!contactNumber && contactId && contactId !== 'undefined') {
         const fresh = await JN.getContact(contactId);
