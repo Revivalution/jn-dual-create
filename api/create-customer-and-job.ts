@@ -104,10 +104,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // 3) Create job tied to contact
-    // Auto-generate unique job name if not provided
+    // Auto-generate unique job name if not provided or make it unique
+    const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
     const jobName = j.name && j.name.trim() 
-      ? j.name.trim() 
-      : `Job for ${c.firstName || ''} ${c.lastName || ''} - ${new Date().toISOString().split('T')[0]}`.trim();
+      ? `${j.name.trim()} - ${timestamp}` 
+      : `Job for ${c.firstName || ''} ${c.lastName || ''} - ${timestamp}`.trim();
     
     console.log('📝 Creating job with name:', jobName);
     
