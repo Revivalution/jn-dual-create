@@ -101,6 +101,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         log.info({ fresh }, 'Fetched fresh contact');
         contactNumber = extractRecordNumber(fresh);
       }
+      
+      // Wait a moment for JobNimbus to fully process the contact
+      console.log('⏳ Waiting for JobNimbus to process contact...');
+      await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay
     }
 
     // 3) Create job tied to contact
@@ -114,16 +118,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       : `Job for ${c.firstName || ''} ${c.lastName || ''} - ${timestamp}`.trim();
     
     console.log('📝 Final job name:', jobName);
+    console.log('📝 Creating job for contact ID:', contactId);
     
-    const jobCreated = await JN.createJob({
-      contactId: contactId,
-      name: jobName,
-      // Don't set type or status - let JobNimbus use defaults
-      address: j.address,
-      // Assign to current user
-      sales_rep: userEmail,
-      sales_rep_name: userName
-    });
+    let jobCreated;
+    try {
+      jobCreated = await JN.createJob({
+        contactId: contactId,
+        name: jobName,
+        // Don't set type or status - let JobNimbus use defaults
+        address: j.address,
+        // Assign to current user
+        sales_rep: userEmail,
+        sales_rep_name: userName
+      });
+    } catch (jobError: any) {
+      console.error('❌ Job creation failed:', jobError.message);
+      console.error('❌ Job error details:', jobError.response?.data);
+      
+      // If it's a Couchbase error, the contact might not be ready yet
+      if (jobError.response?.data?.includes?.('CouchbaseError')) {
+        console.log('⏳ Retrying job creation after delay...');
+        await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay
+        
+        // Retry once
+        jobCreated = await JN.createJob({
+          contactId: contactId,
+          name: jobName,
+          address: j.address,
+          sales_rep: userEmail,
+          sales_rep_name: userName
+        });
+      } else {
+        throw jobError; // Re-throw if it's a different error
+      }
+    }
 
     log.info({ jobCreated }, 'Job created response');
     
