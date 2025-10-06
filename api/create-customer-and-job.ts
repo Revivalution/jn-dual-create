@@ -117,6 +117,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   } catch (err: any) {
     console.error('Error:', err);
-    return res.status(500).json({ error: err.message || 'Server error' });
+    console.error('Error response:', err.response?.data);
+    console.error('Error status:', err.response?.status);
+    return res.status(500).json({ 
+      error: err.message || 'Server error',
+      details: err.response?.data,
+      status: err.response?.status
+    });
   }
 }
