@@ -27,22 +27,22 @@ export type JobCreate = {
   };
 };
 
-export const JobNimbus = {
-  async searchContacts(q: { phone?: string; email?: string; name?: string }, apiKey?: string) {
-    // Replace params to match your tenant’s search semantics.
+export const JobNimbus = (apiKey?: string) => ({
+  async searchContacts(q: { phone?: string; email?: string; name?: string }) {
+    // Replace params to match your tenant's search semantics.
     return (await jnClient(apiKey).get('/contacts', { params: q })).data;
   },
-  async getContact(id: string, apiKey?: string) {
+  async getContact(id: string) {
     return (await jnClient(apiKey).get(`/contacts/${id}`)).data;
   },
-  async createContact(body: ContactCreate, apiKey?: string) {
+  async createContact(body: ContactCreate) {
     return (await jnClient(apiKey).post('/contacts', body)).data;
   },
-  async getJob(id: string, apiKey?: string) {
+  async getJob(id: string) {
     return (await jnClient(apiKey).get(`/jobs/${id}`)).data;
   },
-  async createJob(body: JobCreate, apiKey?: string) {
+  async createJob(body: JobCreate) {
     return (await jnClient(apiKey).post('/jobs', body)).data;
   }
-};
+});
 

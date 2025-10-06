@@ -36,23 +36,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const c: any = body.contact || {};
     const j: any = body.job || {};
 
+    log.info({ contact: c, job: j }, 'Received request');
+
     // 1) Normalize and search (phone > email > name)
     const phone = normalizeE164(c.phone);
     const email = typeof c.email === 'string' ? c.email : undefined;
     let found: any | undefined;
 
+    const JN = JobNimbus(jnKey); // Initialize JobNimbus client with the key
+
     if (phone) {
-      const r = await JobNimbus.searchContacts({ phone }, jnKey);
+      const r = await JN.searchContacts({ phone });
       if (Array.isArray(r) && r.length === 1) found = r[0];
     }
     if (!found && email) {
-      const r = await JobNimbus.searchContacts({ email }, jnKey);
+      const r = await JN.searchContacts({ email });
       if (Array.isArray(r) && r.length === 1) found = r[0];
     }
     if (!found && (c.displayName || c.firstName || c.lastName)) {
       const name = c.displayName || [c.firstName, c.lastName].filter(Boolean).join(' ').trim();
       if (name) {
-        const r = await JobNimbus.searchContacts({ name }, jnKey);
+        const r = await JN.searchContacts({ name });
         if (Array.isArray(r) && r.length === 1) found = r[0];
       }
     }
@@ -67,7 +71,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // displayName is required by JobNimbus
       const displayName = c.displayName ?? [c.firstName, c.lastName].filter(Boolean).join(' ').trim();
 
-      const created = await JobNimbus.createContact({
+      const created = await JN.createContact({
         firstName: c.firstName,
         lastName: c.lastName,
         display_name: displayName, // Use snake_case as JobNimbus expects
@@ -75,28 +79,42 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         phone: phone,
         email: email,
         address: c.address
-      }, jnKey);
+      });
 
-      contactId = String(created.id ?? created.contactId ?? created.ID);
+      log.info({ created }, 'Contact created response');
+      
+      // Extract ID - try multiple field names
+      contactId = String(created.jnid ?? created.id ?? created.contactId ?? created.ID ?? created._id);
       contactNumber = extractRecordNumber(created);
-      if (!contactNumber && contactId) {
-        const fresh = await JobNimbus.getContact(contactId, jnKey);
+      
+      log.info({ contactId, contactNumber }, 'Extracted contact identifiers');
+      
+      if (!contactNumber && contactId && contactId !== 'undefined') {
+        const fresh = await JN.getContact(contactId);
+        log.info({ fresh }, 'Fetched fresh contact');
         contactNumber = extractRecordNumber(fresh);
       }
     }
 
     // 3) Create job tied to contact
-    const jobCreated = await JobNimbus.createJob({
+    const jobCreated = await JN.createJob({
       contactId: contactId,
       name: j.name ?? 'New Job',
       // Don't set type or status - let JobNimbus use defaults
       address: j.address
-    }, jnKey);
+    });
 
-    const jobId = String(jobCreated.id ?? jobCreated.jobId ?? jobCreated.ID);
+    log.info({ jobCreated }, 'Job created response');
+    
+    // Extract ID - try multiple field names
+    const jobId = String(jobCreated.jnid ?? jobCreated.id ?? jobCreated.jobId ?? jobCreated.ID ?? jobCreated._id);
     let jobNumber = extractRecordNumber(jobCreated);
-    if (!jobNumber && jobId) {
-      const freshJob = await JobNimbus.getJob(jobId, jnKey);
+    
+    log.info({ jobId, jobNumber }, 'Extracted job identifiers');
+    
+    if (!jobNumber && jobId && jobId !== 'undefined') {
+      const freshJob = await JN.getJob(jobId);
+      log.info({ freshJob }, 'Fetched fresh job');
       jobNumber = extractRecordNumber(freshJob);
     }
 
