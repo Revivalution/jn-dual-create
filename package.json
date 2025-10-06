@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "echo 'No build needed for Vercel serverless'",
     "start": "node --env-file=.env ./dist/index.js",
     "dev": "tsx --env-file=.env src/index.ts"
   },
