@@ -1,3 +1,7 @@
 import pino from 'pino';
-export const log = pino({ transport: { target: 'pino-pretty' } });
+
+// Simple logger for serverless (no pino-pretty in production)
+export const log = pino({
+  level: process.env.LOG_LEVEL || 'info'
+});
 
