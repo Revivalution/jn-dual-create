@@ -64,21 +64,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       contactId = String(found.id);
       contactNumber = extractRecordNumber(found);
     } else {
-      const displayName =
-        cfg.displayNameMode === 'displayName'
-          ? (c.displayName ?? [c.firstName, c.lastName].filter(Boolean).join(' ').trim())
-          : undefined;
-
-      const name =
-        cfg.displayNameMode === 'name'
-          ? (c.displayName ?? [c.firstName, c.lastName].filter(Boolean).join(' ').trim())
-          : undefined;
+      // displayName is required by JobNimbus
+      const displayName = c.displayName ?? [c.firstName, c.lastName].filter(Boolean).join(' ').trim();
 
       const created = await JobNimbus.createContact({
         firstName: c.firstName,
         lastName: c.lastName,
-        displayName,
-        name,
+        display_name: displayName, // Use snake_case as JobNimbus expects
         // Don't set type or status - let JobNimbus use defaults
         phone: phone,
         email: email,
