@@ -79,18 +79,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // displayName is required by JobNimbus
       const displayName = c.displayName ?? [c.firstName, c.lastName].filter(Boolean).join(' ').trim();
 
-      const created = await JN.createContact({
+      const contactData: any = {
         firstName: c.firstName,
         lastName: c.lastName,
         display_name: displayName, // Use snake_case as JobNimbus expects
         // Don't set type or status - let JobNimbus use defaults
         phone: phone,
         email: email,
-        address: c.address,
-        // Assign to current user
-        sales_rep: userEmail,
-        sales_rep_name: userName
-      });
+        address: c.address
+      };
+      
+      // Only add sales_rep if we have the user info
+      if (userEmail) {
+        contactData.sales_rep = userEmail;
+      }
+      if (userName) {
+        contactData.sales_rep_name = userName;
+      }
+      
+      console.log('📝 Contact data:', JSON.stringify(contactData, null, 2));
+      
+      let created;
+      try {
+        created = await JN.createContact(contactData);
+      } catch (createError: any) {
+        console.error('❌ Contact creation failed:', createError.message);
+        console.error('❌ Error response:', createError.response?.data);
+        console.error('❌ Error status:', createError.response?.status);
+        throw createError;
+      }
 
       console.log('✅ Contact created successfully');
       log.info({ created }, 'Contact created response');
