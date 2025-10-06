@@ -79,7 +79,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         lastName: c.lastName,
         displayName,
         name,
-        type: c.type ?? cfg.defaults.contactType,
+        // Don't set type - JobNimbus doesn't accept it for contacts
         status: c.status ?? cfg.defaults.contactStatus,
         phone: phone,
         email: email,
