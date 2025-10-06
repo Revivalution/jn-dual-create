@@ -80,13 +80,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const displayName = c.displayName ?? [c.firstName, c.lastName].filter(Boolean).join(' ').trim();
 
       const contactData: any = {
-        firstName: c.firstName,
-        lastName: c.lastName,
-        display_name: displayName, // Use snake_case as JobNimbus expects
+        first_name: c.firstName,  // Use snake_case as JobNimbus expects
+        last_name: c.lastName,    // Use snake_case as JobNimbus expects
         // Don't set type or status - let JobNimbus use defaults
-        phone: phone,
+        home_phone: phone,        // Use home_phone field (snake_case)
         email: email,
-        address: c.address
+        address_line1: c.address?.street,
+        city: c.address?.city,
+        state_text: c.address?.state,
+        zip: c.address?.postalCode
       };
       
       // NOTE: We use the 'actor' query parameter to set the creator/owner
@@ -149,7 +151,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       jobCreated = await JN.createJob({
         name: jobName,
         // Don't set type or status - let JobNimbus use defaults
-        address: j.address,
+        address_line1: j.address?.street,
+        city: j.address?.city,
+        state_text: j.address?.state,
+        zip: j.address?.postalCode,
         // Link job to contact using the 'primary' field (per JobNimbus docs)
         primary: {
           id: contactId
@@ -169,7 +174,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Retry once
         jobCreated = await JN.createJob({
           name: jobName,
-          address: j.address,
+          address_line1: j.address?.street,
+          city: j.address?.city,
+          state_text: j.address?.state,
+          zip: j.address?.postalCode,
           primary: {
             id: contactId
           }
