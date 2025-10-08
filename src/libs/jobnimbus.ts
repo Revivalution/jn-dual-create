@@ -22,6 +22,8 @@ export type ContactCreate = {
 
 export type JobCreate = {
   name?: string;
+  display_name?: string;   // Some tenants use display_name as the visible name
+  displayName?: string;    // CamelCase version
   type?: string;
   status?: string;
   address?: {

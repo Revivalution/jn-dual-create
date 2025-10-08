@@ -134,22 +134,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // 3) Create job tied to contact
-    // Auto-generate unique job name if not provided or make it unique
-    const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    console.log('🔍 Job name from request:', j.name, 'Type:', typeof j.name, 'Length:', j.name?.length);
-    const hasJobName = j.name && typeof j.name === 'string' && j.name.trim().length > 0;
-    console.log('🔍 hasJobName:', hasJobName);
-    const jobName = hasJobName
-      ? `${j.name.trim()} - ${timestamp}` 
-      : `Job for ${c.firstName || ''} ${c.lastName || ''} - ${timestamp}`.trim();
+    // ALWAYS use customer's first and last name for the job name
+    const customerName = `${c.firstName || ''} ${c.lastName || ''}`.trim();
+    const jobName = customerName || 'Unnamed Customer';
     
-    console.log('📝 Final job name:', jobName);
+    console.log('📝 Job name (using customer name):', jobName);
     console.log('📝 Creating job for contact ID:', contactId);
     
     let jobCreated;
     try {
       jobCreated = await JN.createJob({
         name: jobName,
+        display_name: jobName,  // Set display_name explicitly to prevent auto-formatting
+        displayName: jobName,   // Also set camelCase version for compatibility
         // Don't set type or status - let JobNimbus use defaults
         address_line1: j.address?.street,
         city: j.address?.city,
