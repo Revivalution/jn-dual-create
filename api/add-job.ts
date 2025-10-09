@@ -14,8 +14,8 @@ import { log } from '../src/libs/logger.js';
  * 
  * Request body:
  * {
- *   contactId: string,     // JobNimbus contact JNID
- *   contactName: string,   // Customer's full name (for job name)
+ *   contactId: string,     // JobNimbus contact JNID (required)
+ *   jobName: string,       // User-provided job name (required - e.g., "Roof Replacement", "Insurance Job")
  *   job: {
  *     address?: {
  *       street?: string,
@@ -49,17 +49,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const body: any = req.body || {};
-    const { contactId, contactName, job: j = {} } = body;
+    const { contactId, jobName, job: j = {} } = body;
 
     if (!contactId) {
       return res.status(400).json({ error: 'missing contactId' });
     }
 
+    if (!jobName) {
+      return res.status(400).json({ error: 'missing jobName - job name is required' });
+    }
+
     console.log('👤 Adding job for user:', userName, '(', userEmail, ')');
     console.log('📦 Contact ID:', contactId);
-    console.log('📦 Contact Name:', contactName);
+    console.log('📦 Job Name:', jobName);
     console.log('📦 Job data:', j);
-    log.info({ contactId, contactName, job: j, userEmail, userName }, 'Adding job to existing customer');
+    log.info({ contactId, jobName, job: j, userEmail, userName }, 'Adding job to existing customer');
 
     const JN = JobNimbus(jnKey, userEmail); // Initialize JobNimbus client
 
@@ -74,10 +78,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: 'Contact not found', contactId });
     }
 
-    // Use customer's name for job name (consistent with dual-create)
-    const jobName = contactName || contact.display_name || contact.displayName || 'Unnamed Customer';
-    
-    console.log('📝 Job name (using customer name):', jobName);
+    // Use the user-provided job name directly
+    console.log('📝 Job name (user-provided):', jobName);
     console.log('📝 Creating job for contact ID:', contactId);
     
     let jobCreated;
@@ -122,7 +124,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           }
         });
       } else {
-        throw jobError; // Re-throw if it's a different error
+        throw jobError; // Re-throw - will be caught and returned as 500 with details
       }
     }
 
